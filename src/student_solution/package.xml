@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<package format="2"><name>student_solution</name><version>0.1.0</version>
+<description>Student starter: public camera and takeoff/land smoke test.</description>
+<maintainer email="ppppplustjh@gmail.com">plus</maintainer><license>BSD-3-Clause</license>
+<buildtool_depend>catkin</buildtool_depend><depend>rospy</depend><depend>actionlib</depend>
+<depend>geometry_msgs</depend><depend>sensor_msgs</depend><depend>nav_msgs</depend>
+<depend>std_msgs</depend><depend>px4_competition</depend></package>

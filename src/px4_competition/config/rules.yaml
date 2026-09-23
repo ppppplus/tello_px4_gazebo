@@ -1,0 +1,22 @@
+rules:
+  takeoff_rise: 0.30
+  takeoff_hold: 0.5
+  landing_height: 0.24
+  landing_speed: 0.10
+  landing_tilt_deg: 10.0
+  landing_hold: 1.0
+  lamp_distance: 0.5
+  drone_half_width: 0.396
+  drone_top_offset: 0.040
+  drone_bottom_offset: -0.182
+  wall_crossing_margin: 0.03
+
+student_interface:
+  command_timeout: 0.5
+  max_xy_speed: 0.8
+  max_z_speed: 0.5
+  max_yaw_rate: 1.0
+  takeoff_speed: 0.35
+  takeoff_tolerance: 0.08
+  takeoff_timeout: 30.0
+  land_timeout: 45.0

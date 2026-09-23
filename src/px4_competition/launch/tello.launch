@@ -1,0 +1,49 @@
+<launch>
+  <!-- Independent entry: final.launch and upstream Iris files are untouched. -->
+  <arg name="seed" default="11" />
+  <arg name="gui" default="false" />
+  <arg name="verbose" default="false" />
+  <arg name="software_camera" default="true" />
+  <arg name="runtime" />
+  <arg name="arena_file" default="$(find px4_competition)/config/tello_arena.yaml" />
+  <arg name="rules_file" default="$(find px4_competition)/config/tello_scaled_rules.yaml" />
+  <arg name="world_file" default="$(find px4_competition)/worlds/tello_final.world" />
+  <arg name="spawn_x" default="-1.1275" />
+  <arg name="spawn_y" default="-1.1275" />
+  <arg name="vehicle_sdf" default="$(eval find('px4_competition') + '/models/tello_training/' + ('model.sdf' if arg('software_camera') else 'model_camera.sdf'))" />
+  <param name="/use_sim_time" value="true" />
+  <param name="/final/seed" value="$(arg seed)" type="int" />
+  <param name="/final/drone_name" value="quadrotor" />
+  <param name="/final/vehicle_model" value="tello" />
+  <param name="/final/archive_workspace" value="$(find px4_competition)/../.." />
+  <rosparam command="load" file="$(arg arena_file)" />
+  <rosparam command="load" file="$(arg rules_file)" />
+  <rosparam param="/arena/start_pose" subst_value="true">[$(arg spawn_x), $(arg spawn_y), 0.04]</rosparam>
+
+  <node name="sitl" pkg="px4" type="px4" output="screen" required="true"
+        args="$(arg runtime)/etc -w $(arg runtime) -s etc/init.d-posix/rcS -d">
+    <env name="PX4_SIM_MODEL" value="gazebo-classic_tello" />
+  </node>
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(arg world_file)" />
+    <arg name="gui" value="$(arg gui)" />
+    <arg name="verbose" value="$(arg verbose)" />
+    <arg name="server_required" value="true" />
+    <arg name="gui_required" value="true" />
+  </include>
+  <node name="tello_spawn" pkg="gazebo_ros" type="spawn_model" output="screen"
+        args="-sdf -file $(arg vehicle_sdf) -model tello -x $(arg spawn_x) -y $(arg spawn_y) -z 0.04 -Y 1.5707963267948966" />
+  <include file="$(find mavros)/launch/px4.launch">
+    <arg name="gcs_url" value="" />
+    <arg name="fcu_url" value="udp://:14540@localhost:14557" />
+  </include>
+  <node pkg="px4_competition" type="gazebo_truth.py" name="gazebo_truth" output="screen">
+    <param name="model" value="tello" />
+  </node>
+  <node pkg="px4_competition" type="final_scene.py" name="final_scene" output="screen" required="true" />
+  <node pkg="px4_competition" type="final_judge.py" name="final_judge" output="screen" required="true" />
+  <node pkg="px4_competition" type="student_bridge.py" name="student_bridge" output="screen" required="true" />
+  <node if="$(arg software_camera)" pkg="px4_competition" type="tello_software_camera.py" name="software_camera" output="screen" required="true" />
+  <node unless="$(arg software_camera)" pkg="tf" type="static_transform_publisher" name="tello_camera_tf"
+        args="0.036 0 0.005 -1.57079632679 0 -1.57079632679 quadrotor/base_link front_camera_optical 100" />
+</launch>

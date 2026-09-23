@@ -1,0 +1,36 @@
+arena:
+  size: 5.0
+  boundary_wall_height: 2.5
+  boundary_wall_thickness: 0.10
+  wall_length: 3.0
+  wall_height: 2.0
+  wall_thickness: 0.05
+  window_width: 0.95
+  window_height: 0.60
+  window_center_height: 1.48
+  window_centers_x: [-1.0, 0.0, 1.0]
+  marker_radius: 0.10
+  marker_center_height: 1.89
+  cabinet_centers_x: [-0.76, 0.76]
+  cabinet_y: -1.30
+  cabinet_width: 0.40
+  cabinet_depth: 0.28
+  cabinet_height: 1.0
+  cabinet_hole_width: 0.26
+  cabinet_hole_height: 0.28
+  cabinet_hole_center_height: 0.78
+  cabinet_panel_thickness: 0.035
+  ball_radius: 0.10
+  rotation_speed_deg: 15.0
+  board_y: 2.47
+  board_width: 2.0
+  board_height: 1.0
+  board_top: 1.64
+  lamp_radius: 0.025
+  lamp_columns_u: [0.25, 1.0, 1.75]
+  lamp_rows_v: [0.125, 0.5, 0.875]
+  pad_size: 0.6
+  start_pad: [-2.2, -2.2]
+  land_pad: [2.2, 2.2]
+  start_pose: [-2.05, -2.05, 0.20]
+  start_yaw: 1.5707963267948966
