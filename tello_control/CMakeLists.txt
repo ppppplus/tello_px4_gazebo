@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.0.2)
+project(tello_control)
+find_package(catkin REQUIRED COMPONENTS rospy actionlib cv_bridge geometry_msgs sensor_msgs std_msgs tello_competition)
+catkin_package()
+catkin_install_python(PROGRAMS scripts/demo.py DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})

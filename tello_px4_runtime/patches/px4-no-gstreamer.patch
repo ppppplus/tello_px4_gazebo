@@ -1,0 +1,15 @@
+diff --git a/src/modules/simulation/simulator_mavlink/sitl_targets_gazebo-classic.cmake b/src/modules/simulation/simulator_mavlink/sitl_targets_gazebo-classic.cmake
+index 7b73e03..999fea3 100644
+--- a/src/modules/simulation/simulator_mavlink/sitl_targets_gazebo-classic.cmake
++++ b/src/modules/simulation/simulator_mavlink/sitl_targets_gazebo-classic.cmake
+@@ -50,6 +50,10 @@ if(gazebo_FOUND)
+ 			-DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
+ 			-DSEND_ODOMETRY_DATA=ON
+ 			-DGENERATE_ROS_MODELS=ON
++			# The competition camera uses gazebo_ros_camera. GStreamer's
++			# streaming plugin is unnecessary and its development headers are
++			# intentionally not required on student machines.
++			-DBUILD_GSTREAMER_PLUGIN=OFF
+ 		BINARY_DIR ${PX4_BINARY_DIR}/build_gazebo-classic
+ 		INSTALL_COMMAND ""
+ 		DEPENDS git_sitl_gazebo-classic

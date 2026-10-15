@@ -1,0 +1,17 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 502ab76..2459ea4 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -90,6 +90,12 @@ if (BUILD_GSTREAMER_PLUGIN)
+   endif()
+ endif()
+ 
++# gazebo_user_camera_plugin is built independently of the optional GStreamer
++# plugin but still uses Qt. Find Qt explicitly when GStreamer support is off.
++if (NOT BUILD_GSTREAMER_PLUGIN AND NOT "${GAZEBO_VERSION}" VERSION_LESS "8.0")
++  find_package(Qt5 COMPONENTS Core Widgets Test REQUIRED)
++endif()
++
+ pkg_check_modules(OGRE OGRE)
+ 
+ if("${GAZEBO_VERSION}" VERSION_LESS "8.0")
