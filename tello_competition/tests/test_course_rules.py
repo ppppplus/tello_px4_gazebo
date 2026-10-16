@@ -46,6 +46,66 @@ class CourseRulesTest(unittest.TestCase):
         self.score.update(FlightSample(3, x, y - .274, z))
         self.assertEqual(self.score.submit('target1')['score_delta'], 10)
 
+    def test_landing_outside_pad_finishes_and_freezes_without_points(self):
+        score = self.score
+        x, y, _ = self.arena.start_pose
+        self.assertEqual(score.update(FlightSample(2, x, y, .02)), [])
+        self.assertEqual(score.phase, 'running')
+        events = score.update(FlightSample(3.1, x, y, .02))
+        self.assertEqual(events, [dict(kind='landing', score_delta=0, in_landing_zone=False)])
+        self.assertEqual(score.phase, 'finished')
+        self.assertEqual(score.scores['landing'], 0)
+        self.assertAlmostEqual(score.elapsed, 1)
+        self.assertEqual(score.submit('rg')['reason'], 'competition_not_running')
+        # Later movement or even arriving on the pad cannot add points/time.
+        a, b = self.arena.land_pad
+        for t in (5, 6.2, 10):
+            self.assertEqual(score.update(FlightSample(t, a, b, .02)), [])
+        self.assertEqual(score.score, 15)
+        self.assertAlmostEqual(score.elapsed, 1)
+
+    def test_landing_inside_pad_still_awards_15(self):
+        x, y = self.arena.land_pad
+        self.score.update(FlightSample(2, x, y, .02))
+        events = self.score.update(FlightSample(3.1, x, y, .02))
+        self.assertEqual(events, [dict(kind='landing', score_delta=15, in_landing_zone=True)])
+        self.assertEqual(self.score.scores['landing'], 15)
+
+    def test_touchdown_bounce_requires_new_stable_hold(self):
+        x, y, _ = self.arena.start_pose
+        for t,z in ((2,.02),(2.5,.02),(2.8,.08),(3,.02),(3.5,.02)):
+            self.assertEqual(self.score.update(FlightSample(t,x,y,z)), [])
+            self.assertEqual(self.score.phase, 'running')
+        self.score.update(FlightSample(4.1,x,y,.02))
+        self.assertEqual(self.score.phase, 'finished')
+        self.assertEqual(self.score.end_time, 3)
+
+    def test_fast_or_tilted_or_airborne_does_not_end_round(self):
+        x, y, _ = self.arena.start_pose
+        for i,kwargs in enumerate((dict(vx=.2), dict(roll=.3), dict(pitch=.3))):
+            for t in (2+2*i, 3.1+2*i):
+                self.score.update(FlightSample(t,x,y,.02,**kwargs))
+                self.assertEqual(self.score.phase, 'running')
+        for t in (9,10.1):
+            self.score.update(FlightSample(t,x,y,.15))
+            self.assertEqual(self.score.phase, 'running')
+
+    def test_entering_pad_late_does_not_bypass_pad_hold(self):
+        x,y = self.arena.land_pad
+        self.score.update(FlightSample(2,0,0,.02))
+        self.score.update(FlightSample(2.8,x,y,.02))
+        self.score.update(FlightSample(3.1,x,y,.02))
+        self.assertEqual(self.score.phase, 'finished')
+        self.assertEqual(self.score.scores['landing'], 0)
+
+    def test_initial_ground_wait_does_not_end_round(self):
+        score = Scorekeeper(self.arena,self.rules,self.score.round)
+        x,y,z = self.arena.start_pose
+        for t in (0,5,20):
+            self.assertEqual(score.update(FlightSample(t,x,y,.02)), [])
+        self.assertEqual(score.phase, 'ready')
+        self.assertEqual(score.elapsed, 0)
+
     def test_window_scoring_clearance(self):
         z = self.arena.window_center_height
         self.assertAlmostEqual(self.arena.window_width, .35)

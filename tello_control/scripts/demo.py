@@ -174,7 +174,8 @@ class Demo:
             rospy.loginfo('Landing')
             self.wait_action(self.land, LandGoal(), 90, 'landing')
         # Example only: rotating cabinet red, fixed cabinet green. No recognition!
-        # This consumes the round's first ball-color submission; restart for competition.
+        # Landing now ends the round anywhere. This post-landing example is sent
+        # to demonstrate the interface, but the judge rejects it as round finished.
         self.judge.publish(String(data='rg'))
         rospy.loginfo('Sent example judge message: rg (not a vision result)')
         end = time.monotonic() + 1.0

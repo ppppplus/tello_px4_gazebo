@@ -29,6 +29,7 @@ class Scorekeeper:
         self.ball_submitted = False
         self.lamp_progress = 0
         self.start_height = self.takeoff_pending = self.landing_pending = None
+        self.landing_pad_pending = None
         self.start_time = self.end_time = self.last = None
         self.crossing = self.crossing_valid = False
 
@@ -104,20 +105,31 @@ class Scorekeeper:
                 self.scores['window'] = 20
                 events.append({'kind': 'window', 'score_delta': 20})
             speed = math.sqrt(sample.vx ** 2 + sample.vy ** 2 + sample.vz ** 2)
-            landed = (self.arena.on_pad(sample.x, sample.y, self.arena.land_pad)
-                      and sample.z <= self.rules.landing_height
+            on_pad = self.arena.on_pad(sample.x, sample.y, self.arena.land_pad)
+            landed = (sample.z <= self.rules.landing_height
                       and speed < self.rules.landing_speed
                       and abs(sample.roll) < math.radians(self.rules.landing_tilt_deg)
                       and abs(sample.pitch) < math.radians(self.rules.landing_tilt_deg))
             if landed:
                 if self.landing_pending is None:
                     self.landing_pending = sample.time
+                if on_pad:
+                    if self.landing_pad_pending is None:
+                        self.landing_pad_pending = sample.time
+                else:
+                    self.landing_pad_pending = None
                 if sample.time - self.landing_pending >= self.rules.landing_hold:
                     self.phase, self.end_time = 'finished', self.landing_pending
-                    self.scores['landing'] = 15
-                    events.append({'kind': 'landing', 'score_delta': 15})
+                    # Any stable landing ends the round; only a full stable hold
+                    # on the designated pad earns the original landing points.
+                    qualified = (self.landing_pad_pending is not None and
+                                 sample.time-self.landing_pad_pending >= self.rules.landing_hold)
+                    self.scores['landing'] = 15 if qualified else 0
+                    events.append({'kind': 'landing', 'score_delta': self.scores['landing'],
+                                   'in_landing_zone': on_pad})
             else:
                 self.landing_pending = None
+                self.landing_pad_pending = None
         return events
 
     def submit(self, message):

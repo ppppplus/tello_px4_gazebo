@@ -32,6 +32,12 @@ class JudgeDisplayTest(unittest.TestCase):
         self.assertIn('到达 target2 前', text)
         self.assertIn('0.216 m', text)
 
+    def test_landing_outside_zone_is_not_labelled_target_success(self):
+        text = event_text(dict(kind='landing', score_delta=0, in_landing_zone=False))
+        self.assertIn('计时停止', text)
+        self.assertIn('未获目标区降落分', text)
+        self.assertNotIn('目标区降落成功', text)
+
     def test_rejection_not_reported_as_success(self):
         text = event_text(dict(kind='judge_message', accepted=False,
             reason='too_far_from_lamp', message='target1', distance=.5))

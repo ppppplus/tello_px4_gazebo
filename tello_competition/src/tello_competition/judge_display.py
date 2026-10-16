@@ -34,6 +34,8 @@ def event_text(event):
     if kind == 'window':
         return '正确穿越红标窗  +%d 分' % delta
     if kind == 'landing':
+        if not delta:
+            return '降落确认，计时停止（未获目标区降落分）+0 分'
         return '目标区降落成功，计时停止  +%d 分' % delta
     if kind == 'clock_reset':
         return '注意：仿真时钟发生回退'
