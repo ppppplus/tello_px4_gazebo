@@ -1,0 +1,4 @@
+<launch>
+  <!-- Start after drone.launch has loaded geometry and scoring parameters. -->
+  <node pkg="tello_competition" type="final_judge.py" name="final_judge" output="screen" required="true" />
+</launch>

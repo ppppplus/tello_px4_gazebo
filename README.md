@@ -86,9 +86,33 @@ Gazebo 中会出现无人机、起降台、两个柜子、三个窗口和白板�
 
 ### 裁判如何启动和查看
 
+若需要将无人机与裁判分开启动，在两个终端分别执行：
+
+```bash
+# 终端 1：Gazebo、无人机飞控、场景及控制接口（不启动裁判）
+roslaunch tello_competition drone.launch
+
+# 终端 2：等终端 1 的场景初始化后，启动带实时终端界面的裁判
+rosrun tello_competition final_judge.py _dashboard:=true
+```
+
+再在第三个终端启动学生程序。每个终端都先加载工作空间。
+分开启动时不要再运行默认 `tello.launch`，否则会重复启动裁判/仿真节点。
+
 上面的 `tello.launch` **已经同时启动裁判节点 `/final_judge`**，无需重复运行。
-当前裁判是本机 ROS 节点，没有独立的裁判 GUI，也不需要连接另一台裁判电脑。
+当前裁判是本机 ROS 节点，提供终端实时计分界面，不需要连接另一台裁判电脑。
 场景节点初始化比赛目标，裁判订阅无人机真值与 `/tello/judge` 提交，自动计算得分。
+
+实时界面顶部持续刷新比赛计时、总分和分项得分，下方按时间记录起飞、球色提交、
+穿窗、到达 target、降落及拒绝提交的原因。球色显示的是学生提交结果，不提前泄露答案。
+计时使用**仿真时间**，按原规则在起飞确认后开始、目标区降落后冻结；等待起飞时为零。
+如果位姿数据中断，会提示数据中断，不用墙钟时间伪造计时。终端至少 65 列 × 16 行，
+可用方向键或 PgUp/PgDn 翻阅历史，End 回到最新；Q 或 Ctrl+C 会退出裁判节点。
+
+无交互终端、日志采集或自动化运行可使用 `roslaunch tello_competition judge.launch`，
+或 `rosrun tello_competition final_judge.py _dashboard:=false`，输出普通 ROS 日志。
+这两种方式与实时界面是**同一个裁判节点的不同显示方式**，不要同时启动。
+默认 `tello.launch` 保持普通日志方式；需要实时界面时请使用上面的分开启动步骤。
 
 另开终端查看（以下两个 `echo` 分别运行，或 Ctrl+C 停止一个后再运行另一个）：
 
@@ -98,6 +122,8 @@ rosnode info /final_judge      # 确认裁判已启动
 rostopic echo /final/status   # 当前阶段、各项成绩与总分
 rostopic echo /final/events   # 起飞/穿窗事件、提交是否接受及原因
 ```
+
+事件消息保留原字段，并附带事件发生时的 `elapsed`（仿真秒）和 `score`（当时总分）。
 
 学生程序向 `/tello/judge` 发布 `std_msgs/String`：球色如 `rg`，红点到达为
 `target1`、`target2`、`target3`。裁判收到消息不等于一定得分，要看事件中的反馈。
@@ -117,6 +143,8 @@ roslaunch tello_competition tello.launch gui:=false
 ```
 
 相机直接由 Gazebo 渲染，包含墙、柜子及遮挡。图像默认 320×240、目标 20 Hz。
+虚拟相机前移至机体系 `(0.10, 0, 0.005)` m，避免两侧保护圈进入视野，TF 同步更新；
+不裁剪图像、不隐藏模型部件、不改变无人机碰撞尺寸。
 运行下一节 `demo.py` 时，它会自行创建图像窗口，无需额外设置 `camera_preview:=true`。
 在无桌面服务器上，可安装 `xvfb` 后使用
 `xvfb-run -a roslaunch tello_competition tello.launch gui:=false`；软件渲染速度取决于 CPU。
@@ -179,6 +207,19 @@ rostopic echo /tello/state   # 最终应为 armed: false、landed_state: 1
 更完整的验收范围与历史记录见 [VALIDATION](docs/VALIDATION.md)。
 
 ## 5. 编写学生程序
+
+### 练习结束后放回起点
+
+先等待无人机落地并解除解锁，停止所有飞行控制程序，再执行：
+
+```bash
+rosrun tello_control reset_start.py
+```
+
+脚本调用课程 `/final/reset` 服务，将无人机放回出生位置、恢复朝向并清零裁判分数，
+开始相同种子的新一轮。它会拒绝重置仍在飞行或解锁中的无人机，
+并用 `/tello/pose` 核验是否回到起点。这是练习准备工具，不能在比赛流程中调用。
+重置后要重新等待飞控初始化；若估计状态异常，完整重启仿真。
 
 主要修改 `tello_control/scripts/demo.py`，可在 `tello_control` 下继续增加 Python/C++ 节点。
 新增依赖或可执行文件时，同步修改该包的 `package.xml` 和 `CMakeLists.txt`，然后重新编译。

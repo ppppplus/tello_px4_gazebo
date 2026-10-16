@@ -56,7 +56,18 @@ class StudentNamespaceTest(unittest.TestCase):
         launch = ET.parse(str(PACKAGE / 'launch/tello.launch')).getroot()
         tf_args = shlex.split(launch.find("node[@name='tello_camera_tf']").get('args'))
         self.assertEqual(tf_args[6:8], ['tello/base_link', 'tello/front_camera_optical'])
+        sensor = model.find(".//sensor[@name='front_camera']")
+        self.assertEqual([float(v) for v in sensor.findtext('pose').split()][:3], [0.10,0,0.005])
+        self.assertEqual([float(v) for v in tf_args[:3]], [0.10,0,0.005])
         self.assertIn('tello/base_link', strings(PACKAGE / 'scripts/student_bridge.py'))
+
+    def test_separate_referee_launch(self):
+        drone = ET.parse(str(PACKAGE / 'launch/drone.launch')).getroot()
+        self.assertEqual(drone.find("include/arg[@name='judge']").get('value'), 'false')
+        judge = ET.parse(str(PACKAGE / 'launch/judge.launch')).getroot()
+        self.assertEqual(judge.find('node').get('name'), 'final_judge')
+        combined = ET.parse(str(PACKAGE / 'launch/tello.launch')).getroot()
+        self.assertEqual(combined.find("arg[@name='judge']").get('default'), 'true')
 
     def test_all_camera_consumers_use_tello_namespace(self):
         consumers = [COURSE / 'tello_control/scripts/demo.py']

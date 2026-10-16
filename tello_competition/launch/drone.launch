@@ -1,0 +1,12 @@
+<launch>
+  <!-- Simulator, vehicle, scene and student interface; deliberately no referee. -->
+  <arg name="seed" default="11" />
+  <arg name="gui" default="true" />
+  <arg name="camera_preview" default="false" />
+  <include file="$(find tello_competition)/launch/tello.launch">
+    <arg name="seed" value="$(arg seed)" />
+    <arg name="gui" value="$(arg gui)" />
+    <arg name="camera_preview" value="$(arg camera_preview)" />
+    <arg name="judge" value="false" />
+  </include>
+</launch>

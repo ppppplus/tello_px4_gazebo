@@ -3,6 +3,7 @@
   <arg name="gui" default="true" />
   <arg name="camera_preview" default="false" />
   <arg name="verbose" default="false" />
+  <arg name="judge" default="true" />
   <!-- Resolve paths in both source workspaces and catkin install spaces. -->
   <env name="GAZEBO_MODEL_PATH" value="$(find tello_competition)/models:$(optenv GAZEBO_MODEL_PATH)" />
   <env name="GAZEBO_PLUGIN_PATH" value="$(find tello_px4_runtime)/runtime/lib:$(optenv GAZEBO_PLUGIN_PATH)" />
@@ -33,9 +34,9 @@
     <param name="model" value="tello" />
   </node>
   <node pkg="tello_competition" type="final_scene.py" name="final_scene" output="screen" required="true" />
-  <node pkg="tello_competition" type="final_judge.py" name="final_judge" output="screen" required="true" />
+  <include if="$(arg judge)" file="$(find tello_competition)/launch/judge.launch" />
   <node pkg="tello_competition" type="student_bridge.py" name="student_bridge" output="screen" required="true" />
   <node pkg="tf" type="static_transform_publisher" name="tello_camera_tf"
-        args="0.036 0 0.005 -1.57079632679 0 -1.57079632679 tello/base_link tello/front_camera_optical 100" />
+        args="0.10 0 0.005 -1.57079632679 0 -1.57079632679 tello/base_link tello/front_camera_optical 100" />
   <node if="$(arg camera_preview)" pkg="tello_competition" type="camera_preview.py" name="camera_preview" output="screen" />
 </launch>
