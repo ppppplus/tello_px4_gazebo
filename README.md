@@ -1,42 +1,30 @@
-# Tello 单机决赛课程仿真环境
+# Tello 初赛仿真环境
 
 本目录可以整体放入 ROS 工作空间的 `src/`，使用 `catkin_make` 编译。
 包含 Tello 尺寸训练机、PX4 飞控、Gazebo 场景、裁判和学生代码模板。
-任务是：**起飞 → 两柜球色识别 → 穿红标窗口 → 依次观察并接近三个红点 → 降落**。
+任务是：**起飞 → 两柜球色识别 → 穿着火点窗口 → 依次观察并接近三个红点 → 降落**。
 
 ![Gazebo 场地总览：蓝色起飞台、两个球柜、三扇窗口、九宫格白板和绿色降落台](docs/images/overview.png)
 
 上图为本课程场景与模型在 Gazebo 中的实际渲染。蓝色区域是起飞台，绿色区域是目标降落台；
 两个球柜位于窗口前，三灯白板位于窗口后。球色、指定窗口和亮灯位置随 `seed` 改变。
 
-## 1. 环境要求
-
-- Ubuntu **20.04 x86_64**、ROS **Noetic**、Gazebo **Classic 11**。
-- 已安装 ROS，并配置可用的 ROS 软件源；终端中使用系统 Python 3，退出 Conda。
-- 有可用的桌面与 OpenGL。虚拟机请开启 3D 加速；建议至少 4 核 CPU、8 GB 内存。
-- 本课程包约 28 MB，包含固定版本的 PX4 v1.14.3 Linux 运行文件、所需的 Gazebo 飞控插件和 EGM96-5 数据。
-  **学生不需要另外下载或编译 PX4，也不需要原教师工程。**
-
-课程包内的 PX4 运行文件限定上述平台；不能直接在 Ubuntu 22.04/24.04、ROS 2、ARM、Windows 或 macOS 上运行。
-其他系统请使用 Ubuntu 20.04 x86_64 虚拟机或课程镜像。
-
-首次使用时，需要安装 ROS/Gazebo/MAVROS 等系统依赖。已经配置好的课程电脑可跳过：
-
+## 1. 环境安装
+首次使用时，需要安装 ROS/Gazebo/MAVROS 等系统依赖。已经配置好的 ROS2GO U盘系统可跳过。
+建议在主目录下建立 tello_ws 来使用，并将 tello_sim.tar.gz 解压到 ~/tello_ws/src 下，以下也以此为例：
 ```bash
-cd ~/catkin_ws/src/tello_sim
+cd ~/tello_ws/src/tello_sim
 bash tools/install_dependencies.sh
 ```
 
-该脚本只通过现有软件源安装依赖，不修改软件源；需要联网及 sudo。
-如果提示某个 ROS 包不存在，请先确认系统为 Ubuntu 20.04 且 ROS Noetic 软件源配置正确。
-GeographicLib 数据已经随包提供，无需再运行 MAVROS 的全球地理数据下载脚本。
+该脚本只通过现有软件源安装依赖，不修改软件源；需要联网及 sudo。如果报错请及时向助教反馈。
 
 ## 2. 放入工作空间并编译
 
 目录结构应当是：
 
 ```text
-catkin_ws/
+tello_ws/
 └── src/
     └── tello_sim/                 # 整个课程包；这一层不是 ROS 功能包
         ├── README.md
@@ -44,47 +32,29 @@ catkin_ws/
         ├── tello_competition/     # 场景、相机、裁判、控制接口和 Action 消息
         ├── tello_control/         # 学生主要修改这里
         │   └── scripts/demo.py   # 最小订阅与飞行控制演示
-        ├── docs/                 # 学生接口与验收说明
-        └── tools/                # 依赖安装、教师维护工具
+        └── tools/                # 依赖安装工具
 ```
 
-可以使用已有的 catkin 工作空间；不要在同一工作空间再放一份同名功能包。
-从旧版升级时，应替换整份课程目录，并在干净工作空间重新编译，避免旧包和生成消息残留。
-当前学生包名为 `tello_control`，场景与裁判包名为 `tello_competition`；
-起降 Action 类型使用 `tello_competition` 前缀，`/tello/*` 公共话题名称保持不变。
-如果拿到的是 `tello_sim.tar.gz`，可以直接解压：
+编译：
 
 ```bash
-mkdir -p ~/catkin_ws/src
-tar -xzf ~/Downloads/tello_sim.tar.gz -C ~/catkin_ws/src
-```
-
-准备好系统依赖后，编译：
-
-```bash
-source /opt/ros/noetic/setup.bash
-cd ~/catkin_ws
-catkin_make -j2 -DPYTHON_EXECUTABLE=/usr/bin/python3
+cd ~/tello_ws
+catkin_make
 source devel/setup.bash
 ```
 
-编译过程会检查 PX4 运行文件的完整性，不联网、不启动仿真。
-每次打开新终端，都需要 `source ~/catkin_ws/devel/setup.bash`。
-移动整个工作空间后需在新位置重新编译，不要复用其他电脑的 `build/`、`devel/`。
+每次打开新终端，都需要 `source ~/tello_ws/devel/setup.bash`。
 
 ## 3. 启动场景
 
-第一个终端：
+一键启动：包括仿真环境和裁判机
 
 ```bash
-source ~/catkin_ws/devel/setup.bash
+source ~/tello_ws/devel/setup.bash
 roslaunch tello_competition tello.launch
 ```
 
 Gazebo 中会出现无人机、起降台、两个柜子、三个窗口和白板。
-无人机启动后保持未解锁状态，场景不会自动完成比赛。
-
-### 裁判如何启动和查看
 
 若需要将无人机与裁判分开启动，在两个终端分别执行：
 
@@ -96,36 +66,14 @@ roslaunch tello_competition drone.launch
 rosrun tello_competition final_judge.py _dashboard:=true
 ```
 
-再在第三个终端启动学生程序。每个终端都先加载工作空间。
-分开启动时不要再运行默认 `tello.launch`，否则会重复启动裁判/仿真节点。
 
-上面的 `tello.launch` **已经同时启动裁判节点 `/final_judge`**，无需重复运行。
-当前裁判是本机 ROS 节点，提供终端实时计分界面，不需要连接另一台裁判电脑。
-场景节点初始化比赛目标，裁判订阅无人机真值与 `/tello/judge` 提交，自动计算得分。
-
-实时界面顶部持续刷新比赛计时、总分和分项得分，下方按时间记录起飞、球色提交、
+裁判机终端顶部持续刷新比赛计时、总分和分项得分，下方按时间记录起飞、球色提交、
 穿窗、到达 target、降落及拒绝提交的原因。球色显示的是学生提交结果，不提前泄露答案。
 计时使用**仿真时间**，按原规则在起飞确认后开始、目标区降落后冻结；等待起飞时为零。
 如果位姿数据中断，会提示数据中断，不用墙钟时间伪造计时。终端至少 65 列 × 16 行，
 可用方向键或 PgUp/PgDn 翻阅历史，End 回到最新；Q 或 Ctrl+C 会退出裁判节点。
 
-无交互终端、日志采集或自动化运行可使用 `roslaunch tello_competition judge.launch`，
-或 `rosrun tello_competition final_judge.py _dashboard:=false`，输出普通 ROS 日志。
-这两种方式与实时界面是**同一个裁判节点的不同显示方式**，不要同时启动。
-默认 `tello.launch` 保持普通日志方式；需要实时界面时请使用上面的分开启动步骤。
-
-另开终端查看（以下两个 `echo` 分别运行，或 Ctrl+C 停止一个后再运行另一个）：
-
-```bash
-source ~/catkin_ws/devel/setup.bash
-rosnode info /final_judge      # 确认裁判已启动
-rostopic echo /final/status   # 当前阶段、各项成绩与总分
-rostopic echo /final/events   # 起飞/穿窗事件、提交是否接受及原因
-```
-
-事件消息保留原字段，并附带事件发生时的 `elapsed`（仿真秒）和 `score`（当时总分）。
-
-学生程序向 `/tello/judge` 发布 `std_msgs/String`：球色如 `rg`，红点到达为
+学生程序需要向 `/tello/judge` 发布 `std_msgs/String`：球色如 `rg`，红点到达为
 `target1`、`target2`、`target3`。裁判收到消息不等于一定得分，要看事件中的反馈。
 启动例程前先监听 `/final/events`，以免错过瞬时事件；`/final/status` 可随时查看最新状态。
 
@@ -142,71 +90,22 @@ roslaunch tello_competition tello.launch seed:=23
 roslaunch tello_competition tello.launch gui:=false
 ```
 
-相机直接由 Gazebo 渲染，包含墙、柜子及遮挡。图像默认 320×240、目标 20 Hz。
-虚拟相机前移至机体系 `(0.10, 0, 0.005)` m，避免两侧保护圈进入视野，TF 同步更新；
-不裁剪图像、不隐藏模型部件、不改变无人机碰撞尺寸。
-运行下一节 `demo.py` 时，它会自行创建图像窗口，无需额外设置 `camera_preview:=true`。
-在无桌面服务器上，可安装 `xvfb` 后使用
-`xvfb-run -a roslaunch tello_competition tello.launch gui:=false`；软件渲染速度取决于 CPU。
-
-同一台电脑一次启动一套本课程仿真；停止时在启动终端按 `Ctrl+C`，等待进程退出。
-每次启动使用全新的 PX4 参数目录；日志保存在 `~/.ros/tello_sim/run-*` 和 ROS 日志目录中。
-
 ## 4. 运行最小控制演示
 
 保持场景运行，打开第二个终端：
 
 ```bash
-source ~/catkin_ws/devel/setup.bash
+source ~/tello_ws/devel/setup.bash
 rosrun tello_control demo.py
 ```
 
-**运行后会自动飞行**，请在桌面环境中、场景刚启动且无人机位于起点并未解锁时运行，
-不要同时运行其他控制节点。无需 `--smoke` 参数。
-旧版脚本入口已替换为 `demo.py`；更新课程包后请重新执行 `catkin_make` 并加载工作空间。
-
-程序打开第一视角窗口，以约 1 Hz 打印 `/tello/pose` 的世界坐标位置和四元数，
+程序会打开第一视角窗口，以约 1 Hz 打印世界坐标位置 `x/y/z`（米）和
+欧拉角 `roll/pitch/yaw`（度）。`demo.py` 中的 `quaternion_to_euler()` 将
+`/tello/pose` 的四元数转换为欧拉角，话题本身仍保持标准 `PoseStamped` 格式。
 等待飞控初始化后起飞约 0.48 m，向机体右侧以 0.10 m/s 飞行 2 个仿真秒，
-短暂停顿，再向机体前方以 0.10 m/s 飞行 2 个仿真秒，最后降落。
-两段运动的理想位移各约 20 cm，这是定时速度演示，不是精确位置闭环。
-
-降落成功后向 `/tello/judge` 发送一次示例 `rg`（旋转柜红、固定柜绿），
-**不是视觉识别结果，会占用本轮首次球色提交**，正式比赛前请重新启动场景。
-可在另一个终端用 `rostopic echo /final/events` 查看裁判反馈。
-结束时打印 `Demo finished` 并关闭图像窗口；中途异常或 Ctrl+C 会尝试请求降落，
-若 ROS/仿真已停止则无法保证降落，请检查仿真状态。
-这不是完整比赛解法，也不包含球色、窗标和红点识别；降落位置不在目标台，不计目标台得分。
-
-可在第三个终端观察接口（每次先加载工作空间）：
-
-```bash
-source ~/catkin_ws/devel/setup.bash
-rostopic echo /final/events   # 裁判是否收到并接受 rg；Ctrl+C 停止查看
-# 也可以分别查看：
-rostopic echo /tello/pose     # world 绝对位姿，米 / 四元数
-rostopic echo /tello/state   # 最终应为 armed: false、landed_state: 1
-```
-
-若图像窗口无法打开，请从已登录的桌面终端运行，并确认 `echo "$DISPLAY"` 非空。
-若提示找不到 `mavros` 或 `cv_bridge`，先运行依赖安装脚本；不要仅凭成功编译判断运行依赖齐全。
-
-### 本机实测（2026-10-15）
-
-在实际 PX4 + Gazebo 场景运行 `demo.py`，图像窗口正常打开，绝对位姿持续打印，
-起飞和降落 Action 均返回成功，程序打印 `Demo finished` 并正常退出。
-监测器收到 570 帧 320×240 图像；最终 `armed=false`、`landed_state=1`。
-本轮 `rg` 收到裁判反馈 `accepted=true`、`reason=ball_result_recorded`、`score_delta=0`，
-说明消息已接收，但示例颜色并不匹配本轮答案。
-
-实际最高模型原点离地约 44.6 cm（起飞请求是相对上升 48 cm，控制器使用估计高度且有完成容差）。
-从运行开始到落地，世界坐标 X 增加约 20.3 cm、Y 增加约 10.0 cm；
-出生朝向下分别对应向右和向前。此结果包含起降及停顿时的漂移，不能当作精确航点控制。
-若作业需要准确到点，应基于 `/tello/pose` 做位置反馈控制，而非仅按时间发送速度。
-
-本机测试临时加载已有 MAVROS 编译产物，未改动原工程；学生仍应使用依赖安装脚本配置 MAVROS。
-更完整的验收范围与历史记录见 [VALIDATION](docs/VALIDATION.md)。
-
-## 5. 编写学生程序
+短暂停顿，**从上方看逆时针旋转 90°**，再沿旋转后的机头方向以 0.10 m/s
+前飞 2 个仿真秒，最后降落。旋转使用绝对航向反馈，容差 2°；平移仍是定时速度演示。
+降落成功后向 `/tello/judge` 发送一次示例消息 `rg`（旋转柜红、固定柜绿）。
 
 ### 练习结束后放回起点
 
@@ -216,13 +115,7 @@ rostopic echo /tello/state   # 最终应为 armed: false、landed_state: 1
 rosrun tello_control reset_start.py
 ```
 
-脚本调用课程 `/final/reset` 服务，将无人机放回出生位置、恢复朝向并清零裁判分数，
-开始相同种子的新一轮。它会拒绝重置仍在飞行或解锁中的无人机，
-并用 `/tello/pose` 核验是否回到起点。这是练习准备工具，不能在比赛流程中调用。
-重置后要重新等待飞控初始化；若估计状态异常，完整重启仿真。
-
-主要修改 `tello_control/scripts/demo.py`，可在 `tello_control` 下继续增加 Python/C++ 节点。
-新增依赖或可执行文件时，同步修改该包的 `package.xml` 和 `CMakeLists.txt`，然后重新编译。
+同学们编写程序可以参考 `tello_control/scripts/demo.py`。
 
 | 接口 | 用途 |
 | --- | --- |
@@ -250,14 +143,6 @@ rosrun tello_control reset_start.py
 
 学生需要实现视觉识别、导航、后退观察和结果提交；不得通过内部话题读取答案。
 完整消息类型、速度限制、提交格式和裁判条件见 [学生接口](docs/student_api.md)。
-
-### 学生分发包范围
-
-分发整个 `tello_sim` 目录或对应压缩包即可；它包含三个功能包、课程文档及配图、
-依赖安装/维护工具和回归测试。不包含本机验收日志、录屏、接口采样、临时工作空间或构建缓存，
-也不包含旧地图、旧比赛解法和教师录像脚本。
-`tello_px4_runtime/runtime/` 中的 PX4 可执行文件、共享库和地理数据是必要的运行组件，
-不是应删除的调试产物。学生仍需按第 1 节安装系统依赖。
 
 ## 6. 任务流程与计分
 
@@ -345,7 +230,7 @@ rostopic echo /final/events
 
 ## 7. 常见问题
 
-- **找不到功能包**：确认目录层级正确，并执行 `source ~/catkin_ws/devel/setup.bash`。
+- **找不到功能包**：确认目录层级正确，并执行 `source ~/tello_ws/devel/setup.bash`。
   使用 `rospack find tello_competition` 检查当前解析到的路径，避免加载旧课程工作空间。
 - **找不到 MAVROS、Gazebo 插件或共享库**：执行依赖安装脚本；可用
   `rosrun tello_px4_runtime check_runtime.py --integrity --libraries` 检查 PX4 运行文件。
